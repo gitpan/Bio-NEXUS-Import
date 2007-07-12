@@ -9,7 +9,7 @@ use Bio::NEXUS::Functions;
 
 use base 'Bio::NEXUS';
 
-use version; our $VERSION = qv('0.0.1');
+use version; our $VERSION = qv('0.0.2');
 
 
 sub new {
@@ -148,13 +148,13 @@ sub _import_phylip {
                 ( $number_taxa, $number_chars )  = $line =~ m{\A \s* (\d+)\s+(\d+) \s* \z}xms;
                 if (!defined $number_chars) {
                     croak(
-"Could not import $filename: first line must contain number of characters.\n"
+"ERROR: First line must contain number of characters.\n"
                         );
                 }    
             }    
             if (!defined $number_taxa) {
                 croak(
-"Could not import $filename: first line must contain number of taxa.\n"
+"ERROR: First line must contain number of taxa.\n"
                      );
             }    
             next LINE;
@@ -298,7 +298,7 @@ popular phylogeny programs
 
 =head1 VERSION
 
-This document describes Bio::NEXUS::Import version 0.0.1
+This document describes Bio::NEXUS::Import version 0.0.2
 
 
 =head1 SYNOPSIS
@@ -316,7 +316,7 @@ This document describes Bio::NEXUS::Import version 0.0.1
 =head1 DESCRIPTION
 
 A module that extends L<Bio::NEXUS> with parsers for file formats of popular 
-phylogeny programs.
+phylogeny programs. 
 
 =head1 INTERFACE 
 
@@ -360,19 +360,20 @@ The file you have specified in L</"new"> or L</"import_file"> does not exist.
 The fileformat you have specified in L</"new"> or L</"import_file"> is not supported.
 See L<"APPENDIX: SUPPORTED FILE FORMATS"> for a list of supported formats.
 
-=item C<< Could not import $filename: first line must contain number of taxa. >>
+=item C<< ERROR: First line must contain number of taxa. >>
 
 You tried to import a file with the PHYLIP parser but the file does not look like a 
 PHYLIP file. See L<"APPENDIX: SUPPORTED FILE FORMATS"> for valid PHYLIP files.
 
-=item C<< Could not import $filename: first line must contain number of characters. >>
+=item C<< ERROR: First line must contain number of characters. >>
 
 You tried to import a file with the PHYLIP parser for sequence data but the file does
 not look like a PHYLIP file. See L<"APPENDIX: SUPPORTED FILE FORMATS"> for valid PHYLIP files.
 
 =item C<< ERROR: Could not parse $filename. Number taxa not correct. >> 
 
-There are taxa in the PHYLIP file than specified in the header. Check your input file.
+There is a different number of taxa in the PHYLIP file than specified in the
+header. Check your input file.
 
 
 =item C<< ERROR: Could not detect file format. >>
@@ -399,7 +400,6 @@ L<Bio::NEXUS>
 
 None reported.
 
-
 =head1 BUGS AND LIMITATIONS
 
 
@@ -408,6 +408,14 @@ No bugs have been reported.
 Please report any bugs or feature requests to
 C<bug-bio-nexus-import@rt.cpan.org>, or through the web interface at
 L<http://rt.cpan.org>.
+
+=head1 SEE ALSO
+
+L<Bio::NEXUS>, L<Bio::Phylo>.
+
+The PHYLIP program C<seqboot> can also convert a PHYLIP molecular
+sequences or discrete characters morphology data file into the NEXUS format.
+
 
 =head1 APPENDIX: SUPPORTED FILE FORMATS
 
@@ -439,7 +447,7 @@ Below a collection of examples of all supported file formats:
 =item C<PHYLIP_SEQ_INTERLEAVED>
 
 
-    5    42
+        5    42
     Turkey    AAGCTNGGGC ATTTCAGGGT
     Salmo gairAAGCCTTGGC AGTGCAGGGT
     H. SapiensACCGGTTGGC CGTTCAGGGT
@@ -455,7 +463,7 @@ Below a collection of examples of all supported file formats:
 =item C<PHYLIP_SEQ_SEQUENTIAL>
 
 
-    5    42
+        5    42
     Turkey    AAGCTNGGGC ATTTCAGGGT
     GAGCCCGGGC AATACAGGGT AT
     Salmo gairAAGCCTTGGC AGTGCAGGGT

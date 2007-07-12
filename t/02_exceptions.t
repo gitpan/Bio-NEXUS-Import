@@ -27,8 +27,8 @@ eval {
     $nexus = Bio::NEXUS::Import->new('t/data/notexistingfile.phy');
 };    
 
-ok($EVAL_ERROR, 'Exception with not exisiting file');
-diag("\nYOU SHOULD SEE AN EXCEPTION:\n $EVAL_ERROR\n END OF EXCEPTION\n");
+like($EVAL_ERROR,qr{ERROR: t/data/notexistingfile.phy is not a valid filename}, 'Exception with not exisiting file');
+#diag("\nYOU SHOULD SEE AN EXCEPTION:\n $EVAL_ERROR\n END OF EXCEPTION\n");
 
 eval {
     $nexus = Bio::NEXUS::Import->new('t/data/01_distances_square.phy',
@@ -42,8 +42,8 @@ eval {
         'PHYLIP_UNSUPPORTED_FORMAT');
 };    
 
-ok($EVAL_ERROR, 'Exception with valid phylip file and wrong format') || diag $EVAL_ERROR;
-diag("\nYOU SHOULD SEE AN EXCEPTION:\n $EVAL_ERROR\n END OF EXCEPTION\n");
+like($EVAL_ERROR, qr{ERROR: PHYLIP_UNSUPPORTED_FORMAT is not supported.}, 'Exception with valid phylip file and wrong format') || diag $EVAL_ERROR;
+#diag("\nYOU SHOULD SEE AN EXCEPTION:\n $EVAL_ERROR\n END OF EXCEPTION\n");
 
 eval {
     $nexus = Bio::NEXUS::Import->new('t/data/01_seqs_interleaved.phy');
@@ -56,20 +56,20 @@ eval {
         'PHYLIP_DIST_SQUARE');
 };    
 
-ok($EVAL_ERROR, 'Exception with valid phylip file and wrong format') || diag $EVAL_ERROR;
-diag("\nYOU SHOULD SEE AN EXCEPTION:\n $EVAL_ERROR\n END OF EXCEPTION\n");
+like($EVAL_ERROR, qr{ERROR: First line must contain number of}, 'Exception with valid phylip file and wrong format') || diag $EVAL_ERROR;
+#diag("\nYOU SHOULD SEE AN EXCEPTION:\n $EVAL_ERROR\n END OF EXCEPTION\n");
 
 eval {
     $nexus = Bio::NEXUS::Import->new('t/data/02_wrong_distances.phy',
         'PHYLIP_DIST_SQUARE');
 };    
 
-ok($EVAL_ERROR, 'Exception with valid phylip file and wrong format') || diag $EVAL_ERROR;
-diag("\nYOU SHOULD SEE AN EXCEPTION:\n $EVAL_ERROR\n END OF EXCEPTION\n");
+like($EVAL_ERROR, qr{t/data/02_wrong_distances.phy. Number taxa not correct.},'Exception with valid phylip file and wrong format') || diag $EVAL_ERROR;
+#diag("\nYOU SHOULD SEE AN EXCEPTION:\n $EVAL_ERROR\n END OF EXCEPTION\n");
 
 eval {
     $nexus = Bio::NEXUS::Import->new('t/data/02_strangefile.dat');
 };    
 
-ok($EVAL_ERROR, 'Exception with invalid phylip file and undefined format') || diag $EVAL_ERROR;
-diag("\nYOU SHOULD SEE AN EXCEPTION:\n $EVAL_ERROR\n END OF EXCEPTION\n");
+like($EVAL_ERROR, qr{ERROR: Could not detect file format.},'Exception with invalid phylip file and undefined format') || diag $EVAL_ERROR;
+#diag("\nYOU SHOULD SEE AN EXCEPTION:\n $EVAL_ERROR\n END OF EXCEPTION\n");

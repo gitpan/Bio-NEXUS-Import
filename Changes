@@ -1,5 +1,9 @@
 Revision history for Bio-NEXUS-Import
 
+0.0.2  Wed Jul 11 09:04:17 2007
+       - exception tests don't output debug text anymore
+       - POD updates
+
 0.0.1  Wed Jul 11 09:04:17 2007
        Initial release.
 
