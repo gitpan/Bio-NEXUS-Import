@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 55;
+use Test::More tests => 58;
 #use Test::More 'no_plan';
 use Data::Dumper;
 
@@ -52,6 +52,26 @@ cmp_ok($distances_block->get_distance_between('Human', 'Chimp'),'==', 0.2712,
     'distance parsed correctly');
 cmp_ok($distances_block->get_distance_between('Mouse', 'Human'),'==', 1.7101,
     'distance parsed correctly');
+
+
+$nexus	 = Bio::NEXUS::Import->new('t/data/01_distances_microsat.phy');
+
+eval {
+      $blocks 		      = $nexus->get_blocks; 			   	
+      $taxa_block 	      = $nexus->get_block('taxa');            
+      $distances_block    = $nexus->get_block('distances');
+};
+#warn Dumper $distances_block;
+is_deeply($taxa_block->get_taxlabels, ['CAM',  'CAR', 'CIN', ],
+    '') || diag Dumper $taxa_block->get_taxlabels;
+
+cmp_ok($distances_block->get_distance_between('CAM', 'CAR'),'==', 16.252,
+    'distance parsed correctly');
+cmp_ok($distances_block->get_distance_between('CIN', 'CAM'),'==', 11.003,
+    'distance parsed correctly');
+
+
+
 
 ### third to 5th testfile
 

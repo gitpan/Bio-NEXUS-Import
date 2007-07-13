@@ -13,6 +13,7 @@ t/01_import.t
 t/02_exceptions.t
 t/03_detectformat.t
 t/data/01_distances_lower.phy
+t/data/01_distances_microsat.phy
 t/data/01_distances_square.phy
 t/data/01_seqs_interleaved.phy
 t/data/01_seqs_oneline.phy

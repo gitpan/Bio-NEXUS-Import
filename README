@@ -1,4 +1,4 @@
-Bio-NEXUS-Import version 0.0.2
+Bio-NEXUS-Import version 0.0.3
 
 A module that extends Bio::NEXUS with parsers for file formats of popular 
 phylogeny programs

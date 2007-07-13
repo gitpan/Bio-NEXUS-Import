@@ -9,7 +9,7 @@ use Bio::NEXUS::Import;
 use Data::Dumper;
 
 my $nexus = new Bio::NEXUS::Import;
-my $version = $nexus::VERSION;
+my $version = $Bio::NEXUS::Import::VERSION;
 
   #################
  # cmd line args #
@@ -25,7 +25,7 @@ GetOptions( \%opts,
             'help|h',
           ) or pod2usage(2);
 
-if ( $opts{ 'version' } ) { die "Version$version\n"; } 
+if ( $opts{ 'version' } ) { die "Version $version\n"; } 
 pod2usage( -exitval => 0, verbose => 2 ) if $opts{ man };
 pod2usage( 1 ) if !@ARGV or $opts{ help };
 
@@ -48,7 +48,7 @@ phylip2nex.pl - convert a PHYLIP file into NEXUS format
 
 =head1 VERSION
 
-This document describes phylip2nex.pl version 0.0.2
+This document describes phylip2nex.pl version 0.0.3
 
 =head1 SYNOPSIS
 

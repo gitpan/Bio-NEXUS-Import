@@ -9,7 +9,7 @@ use Bio::NEXUS::Functions;
 
 use base 'Bio::NEXUS';
 
-use version; our $VERSION = qv('0.0.2');
+use version; our $VERSION = qv('0.0.3');
 
 
 sub new {
@@ -133,7 +133,6 @@ sub _import_phylip {
 
         #remove newline, leading and trailing whitespaces
         chomp $line;
-        $line  =~ s{\A \s+}{}xms;
         $line  =~ s{\s+ \z}{}xms;
 
         next LINE if $line eq '';
@@ -172,8 +171,9 @@ sub _import_phylip {
             }    
 
             #remove leading and trailing whitespaces
-            $data  =~ s{\A \s+}{}xms;
+            $label =~ s{\A \s+}{}xms;
             $label =~ s{\s+ \z}{}xms;
+            $data  =~ s{\A \s+}{}xms;
             my @taxondata = split /\s+/, $data;
                 
             $taxdata[$taxon_id] = [ @taxondata ] ;
@@ -181,6 +181,7 @@ sub _import_phylip {
         }
         else {
             my @taxondata = @{$taxdata[$taxon_id]};
+            $line =~ s{\A \s+}{}xms;
             push @taxondata, split(/\s+/, $line);
             $taxdata[$taxon_id] = [ @taxondata ];
         }
@@ -298,7 +299,7 @@ popular phylogeny programs
 
 =head1 VERSION
 
-This document describes Bio::NEXUS::Import version 0.0.2
+This document describes Bio::NEXUS::Import version 0.0.3
 
 
 =head1 SYNOPSIS
