@@ -9,7 +9,7 @@ use Bio::NEXUS::Functions;
 
 use base 'Bio::NEXUS';
 
-use version; our $VERSION = qv('0.0.3');
+use version; our $VERSION = qv('0.0.4');
 
 
 sub new {
@@ -299,7 +299,7 @@ popular phylogeny programs
 
 =head1 VERSION
 
-This document describes Bio::NEXUS::Import version 0.0.3
+This document describes Bio::NEXUS::Import version 0.0.4
 
 
 =head1 SYNOPSIS

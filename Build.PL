@@ -12,6 +12,9 @@ my $builder = Module::Build->new(
         'version'    => 0,
         'Bio::NEXUS'    => 0.67,
     },
+    script_files        => [ 
+                  'exec/phylip2nex.pl',
+                           ],
     add_to_cleanup      => [ 'Bio-NEXUS-Import-*' ],
 );
 

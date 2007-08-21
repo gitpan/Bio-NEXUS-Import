@@ -1,13 +1,21 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         Bio-NEXUS-Import
-version:      v0.0.3
-version_from: lib/Bio/NEXUS/Import.pm
-installdirs:  site
+---
+name: Bio-NEXUS-Import
+version: v0.0.4
+author:
+  - 'Markus Riester <mriester@gmx.de>'
+abstract: "Extends Bio::NEXUS with parsers for file formats of\npopular phylogeny programs"
+license: perl
 requires:
-    Bio::NEXUS:                    0.67
-    Test::More:                    0
-    version:                       0
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.17
+  Bio::NEXUS: 0.67
+  Test::More: 0
+  version: 0
+generated_by: Module::Build version 0.2806
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2
+provides:
+  Bio::NEXUS::Import:
+    file: lib/Bio/NEXUS/Import.pm
+    version: v0.0.4
+resources:
+  license: http://dev.perl.org/licenses/

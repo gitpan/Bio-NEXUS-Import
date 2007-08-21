@@ -48,7 +48,7 @@ phylip2nex.pl - convert a PHYLIP file into NEXUS format
 
 =head1 VERSION
 
-This document describes phylip2nex.pl version 0.0.3
+This document describes phylip2nex.pl version 0.0.4
 
 =head1 SYNOPSIS
 
