@@ -1,46 +1,57 @@
 #!/usr/bin/perl
 
+#############################################################################
+#   $Author: markus $
+#     $Date: 2008-04-17 13:24:22 +0200 (Thu, 17 Apr 2008) $
+# $Revision: 479 $
+#############################################################################
+
 use strict;
 use warnings;
 
+use Carp;
+
 use Getopt::Long;
-use Pod::Usage; 
+use Pod::Usage;
 use Bio::NEXUS::Import;
 use Data::Dumper;
 
-my $nexus = new Bio::NEXUS::Import;
+my $nexus   = new Bio::NEXUS::Import;
 my $version = $Bio::NEXUS::Import::VERSION;
 
-  #################
- # cmd line args #
+#################
+# cmd line args #
 #################
 my (%opts);
-Getopt::Long::Configure("bundling"); # for short options bundling
-GetOptions( \%opts, 
-            'format|f=s', 
-            'outfile|o=s', 
-            'verbose|v', 
-            'version|V', 
-            'man', 
-            'help|h',
-          ) or pod2usage(2);
+Getopt::Long::Configure('bundling');    # for short options bundling
+if (!GetOptions( \%opts, 'format|f=s', 'outfile|o=s', 'verbose|v',
+        'version|V', 'man', 'help|h', )) {
+    pod2usage(2);
+}
 
-if ( $opts{ 'version' } ) { die "Version $version\n"; } 
-pod2usage( -exitval => 0, verbose => 2 ) if $opts{ man };
-pod2usage( 1 ) if !@ARGV or $opts{ help };
+if ( $opts{'version'} ) {
+     croak "Version $version\n";
+}
 
-my ($infile,$outfile,$inputFormat,$verbose);
-$infile = shift or die "specify infile as last argument on commandline"; 
-$outfile = ( $opts{ 'outfile' } ? $opts{ 'outfile' } : 'out.nex' ); 
-$inputFormat = ( $opts{ 'format' } ? $opts{ 'format' } : undef ); 
-$verbose = ( $opts{ 'verbose' } ? 1 : 0 ); 
+if ($opts{man}) {
+    pod2usage( -exitval => 0, verbose => 2 )
+}
+if (!@ARGV || $opts{help}) {
+    pod2usage(1);
+}
 
+my ( $infile, $outfile, $input_format, $verbose );
+$infile = shift or croak 'specify infile as last argument on commandline';
+$outfile     = ( $opts{'outfile'} ? $opts{'outfile'} : 'out.nex' );
+$input_format = ( $opts{'format'}  ? $opts{'format'}  : undef );
+$verbose     = ( $opts{'verbose'} ? 1                : 0 );
 
-$nexus->import_file($infile, $inputFormat, $verbose);
+$nexus->import_file( $infile, $input_format, $verbose );
 $nexus->write($outfile);
 
 1;
 
+__END__
 
 =head1 NAME
 
@@ -48,7 +59,7 @@ phylip2nex.pl - convert a PHYLIP file into NEXUS format
 
 =head1 VERSION
 
-This document describes phylip2nex.pl version 0.0.4
+This document describes phylip2nex.pl version 0.1.0
 
 =head1 SYNOPSIS
 

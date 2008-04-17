@@ -1,3 +1,9 @@
+#############################################################################
+#   $Author: markus $
+#     $Date: 2008-04-17 13:18:14 +0200 (Thu, 17 Apr 2008) $
+# $Revision: 478 $
+#############################################################################
+
 package Bio::NEXUS::Import;
 
 use warnings;
@@ -9,15 +15,14 @@ use Bio::NEXUS::Functions;
 
 use base 'Bio::NEXUS';
 
-use version; our $VERSION = qv('0.0.4');
-
+use version; our $VERSION = qv('0.1.0');
 
 sub new {
     my ( $class, $filename, $fileformat, $verbose ) = @_;
     my $self = {};
-    bless( $self, $class );
+    bless $self, $class;
     $self->{'supported_file_formats'} = {
-        'phylip' => { 
+        'phylip' => {
             'PHYLIP_DIST_SQUARE'     => 1,
             'PHYLIP_DIST_LOWER'      => 1,
             'PHYLIP_DIST_UPPER'      => 1,
@@ -25,74 +30,91 @@ sub new {
             'PHYLIP_SEQ_SEQUENTIAL'  => 1,
         },
         'nexus' => { 'NEXUS' => 1 },
-    };    
-    if (defined $filename) {
+    };
+    if ( defined $filename ) {
         $self->import_file( $filename, $fileformat, $verbose );
         $self->set_name($filename);
     }
     return $self;
 }
-    
+
+sub _say {
+    my ( $self, $msg ) = @_;
+    print "$msg\n" or croak q{Can't write to Terminal};
+    return;
+}
 
 sub import_file {
     my ( $self, $filename, $fileformat, $verbose ) = @_;
-    croak "ERROR: $filename is not a valid filename\n" unless -e $filename;
-    my @filecontent = split "\n", $self->_load_file( {
-            'format' => 'filename', 'param' => $filename, 'verbose' => $verbose,
-        });
-    if (!defined $fileformat) {
-        print "Trying to detect format of $self->{filename}.\n"
-            if $verbose;
-        $fileformat = $self->_detect_fileformat(\@filecontent);
-        print "$fileformat detected.\n" if $verbose;
+    if (!-e $filename) {
+        croak "ERROR: $filename is not a valid filename\n";
+    }
+    my @filecontent = split /\n/xms,
+        $self->_load_file(
+        {   'format'  => 'filename',
+            'param'   => $filename,
+            'verbose' => $verbose,
+        }
+        );
+    if ( !defined $fileformat ) {
+        if ($verbose) {
+            $self->_say("Trying to detect format of $self->{filename}");
+        };
+        $fileformat = $self->_detect_fileformat( \@filecontent );
+        if ($verbose) {
+            $self->_say("$fileformat detected");
+        }
     }
     my $sff = $self->{'supported_file_formats'};
-    if (defined $sff->{'phylip'}->{$fileformat}) {
-        $self->_import_phylip( { 
-            'filecontent' => \@filecontent, 'param' => $filename, 'verbose' => $verbose,
-            'fileformat' => $fileformat,
-          }
+    if ( defined $sff->{'phylip'}->{$fileformat} ) {
+        $self->_import_phylip(
+            {   'filecontent' => \@filecontent,
+                'param'       => $filename,
+                'verbose'     => $verbose,
+                'fileformat'  => $fileformat,
+            }
         );
     }
-    elsif (defined $sff->{'nexus'}->{$fileformat}) {
-        $self->read_file($filename, $verbose);
-    }    
+    elsif ( defined $sff->{'nexus'}->{$fileformat} ) {
+        $self->read_file( $filename, $verbose );
+    }
     else {
         croak "ERROR: $fileformat is not supported.\n";
-    }    
+    }
+    return;
 }
 
 sub _detect_fileformat {
     my ( $self, $filecontent ) = @_;
-    if ($filecontent->[0] =~ m{\A \s* (\d+)\s+(\d+) \s* \z}xms) {
-        if ($filecontent->[2] =~ m{\A [\sAGCTU]+ \z }xmsi) {
+    if ( $filecontent->[0] =~ m{\A \s* (\d+)\s+(\d+) \s* \z}xms ) {
+        if ( $filecontent->[2] =~ m{\A [\sAGCTU]+ \z }xmsi ) {
             return 'PHYLIP_SEQ_SEQUENTIAL';
-        }    
+        }
         else {
             return 'PHYLIP_SEQ_INTERLEAVED';
         }
-    }    
-    elsif ($filecontent->[0] =~ m{\A \s* (\d+) \s* \z}xms) {
+    }
+    elsif ( $filecontent->[0] =~ m{\A \s* (\d+) \s* \z}xms ) {
         my $number_taxa = $1;
-        if (length $filecontent->[1] <= 10) {
+        if ( length $filecontent->[1] <= 10 ) {
             return 'PHYLIP_DIST_LOWER';
-        }    
+        }
         else {
             return 'PHYLIP_DIST_SQUARE';
-        }    
+        }
     }
-    elsif ($filecontent->[0] =~ m{\A \s* \#NEXUS \s* \z}xms) {
+    elsif ( $filecontent->[0] =~ m{\A \s* \#NEXUS \s* \z}xms ) {
         return 'NEXUS';
-    }    
+    }
     else {
         croak("ERROR: Could not detect file format.\n");
-    }    
-}   
+    }
+}
 
 sub _load_file {
     my ( $self, $args ) = @_;
     $args->{'format'} ||= 'string';
-    $args->{'param'}  ||= '';
+    $args->{'param'}  ||= q{};
     my $verbose = $args->{'verbose'} || 0;
     my $file;
     my $filename;
@@ -101,194 +123,210 @@ sub _load_file {
         $file = $args->{'param'};
     }
     else {
-        $filename   = $args->{'param'};
-        $file = _slurp($filename);
+        $filename = $args->{'param'};
+        $file     = _slurp($filename);
     }
 
     # Read entire file into scalar $import_file
-    print("Reading file...\n") if $verbose;
+    if ($verbose) {
+        $self->_say('Reading file...');
+    }
     $self->{'filename'} = $filename;
     return $file;
 }
 
 sub _import_phylip {
     my ( $self, $args ) = @_;
-    
+
     my $filename = $self->{'filename'};
 
     $args->{'fileformat'} ||= '_dist_square';
-    my $ff = $args->{'fileformat'}; 
+    my $ff = $args->{'fileformat'};
     $ff = lc $ff;
-    my $verbose = $args->{'verbose'} || 0;
-    my $line_number = 0;
+    my $verbose       = $args->{'verbose'} || 0;
+    my $line_number   = 0;
     my $taxon_started = 0;
-    my $number_taxa;
-    my $number_chars;
-    my @taxdata;
-    my @taxlabels;
     my $taxon_id = -1;
-    LINE:
-    for my $line ( @{ $args->{'filecontent'}} ) {
+    my ($number_taxa, $number_chars, @taxdata, @taxlabels);
+LINE:
+
+    for my $line ( @{ $args->{'filecontent'} } ) {
         $line_number++;
 
         #remove newline, leading and trailing whitespaces
         chomp $line;
-        $line  =~ s{\s+ \z}{}xms;
+        $line =~ s{\s+ \z}{}xms;
 
-        next LINE if $line eq '';
+        next LINE if $line eq q{};
 
-        if ($line_number == 1) {
-            
-            if ($ff =~ /dist/) {
-                ( $number_taxa )  = $line =~ m{\A \s* (\d+) \s* \z}xms;
-            }    
+        if ( $line_number == 1 ) {
+
+            if ( $ff =~ m{dist}xms ) {
+                ($number_taxa) = $line =~ m{\A \s* (\d+) \s* \z}xms;
+            }
             else {
+
                 # sequence data has the number of characters in the first line
-                ( $number_taxa, $number_chars )  = $line =~ m{\A \s* (\d+)\s+(\d+) \s* \z}xms;
-                if (!defined $number_chars) {
+                ( $number_taxa, $number_chars )
+                    = $line =~ m{\A \s* (\d+)\s+(\d+) \s* \z}xms;
+                if ( !defined $number_chars ) {
                     croak(
-"ERROR: First line must contain number of characters.\n"
-                        );
-                }    
-            }    
-            if (!defined $number_taxa) {
-                croak(
-"ERROR: First line must contain number of taxa.\n"
-                     );
-            }    
+                        "ERROR: First line must contain number of characters.\n"
+                    );
+                }
+            }
+            if ( !defined $number_taxa ) {
+                croak( "ERROR: First line must contain number of taxa.\n" );
+            }
             next LINE;
-        }    
-        if (!$taxon_started) {
+        }
+        if ( !$taxon_started ) {
             $taxon_id++;
+
             # first 10 chars are the labels
-            my ($label, $data) = $line =~ m{ \A (.{10})(.*) \z }xms;
-            
+            my ( $label, $data ) = $line =~ m{ \A (.{10})(.*) \z }xms;
+
             # undefined? then we have only one label, no data
             # for example in the first row of a lower distmatrix
-            if (!defined $label) {
+            if ( !defined $label ) {
                 $label = $line;
-                $data  = '';
-            }    
+                $data  = q{};
+            }
 
             #remove leading and trailing whitespaces
             $label =~ s{\A \s+}{}xms;
             $label =~ s{\s+ \z}{}xms;
             $data  =~ s{\A \s+}{}xms;
-            my @taxondata = split /\s+/, $data;
-                
-            $taxdata[$taxon_id] = [ @taxondata ] ;
+            my @taxondata = split /\s+/xms, $data;
+
+            $taxdata[$taxon_id] = [@taxondata];
             push @taxlabels, $label;
         }
         else {
-            my @taxondata = @{$taxdata[$taxon_id]};
+            my @taxondata = @{ $taxdata[$taxon_id] };
             $line =~ s{\A \s+}{}xms;
-            push @taxondata, split(/\s+/, $line);
-            $taxdata[$taxon_id] = [ @taxondata ];
+            push @taxondata, ( split /\s+/xms, $line );
+            $taxdata[$taxon_id] = [@taxondata];
         }
 
-        if ( $ff =~ /dist/ ) {
+        if ( $ff =~ m{dist}xms ) {
 
             # how many tab/space seperated items do we expect?
             my $number_items_in_row;
-            if ($ff =~ /_dist_square/) {
+            if ( $ff =~ m{_dist_square}xms ) {
                 $number_items_in_row = $number_taxa;
-            }    
-            elsif ($ff =~ /_dist_lower/) {
+            }
+            elsif ( $ff =~ m{_dist_lower}xms ) {
                 $number_items_in_row = $taxon_id;
-            }    
-            elsif ($ff =~ /_dist_upper/) {
-                $number_items_in_row = $number_taxa -($taxon_id+1);
+            }
+            elsif ( $ff =~ m{_dist_upper}xms ) {
+                $number_items_in_row = $number_taxa - ( $taxon_id + 1 );
             }
 
-            if (scalar(@{$taxdata[$taxon_id]}) < $number_items_in_row) {
+            if ( scalar( @{ $taxdata[$taxon_id] } ) < $number_items_in_row ) {
                 $taxon_started = 1;
             }
             else {
                 $taxon_started = 0;
-            }  
+            }
         }
         else {
-            my $seq = join '', @{$taxdata[$taxon_id]};
-            if ($ff =~ /_seq_seq/) { 
-                if (length($seq) < $number_chars) {
+            my $seq = join q{}, @{ $taxdata[$taxon_id] };
+            if ( $ff =~ m{_seq_seq}xms ) {
+                if ( length $seq < $number_chars ) {
                     $taxon_started = 1;
                 }
                 else {
                     $taxon_started = 0;
-                }    
+                }
             }
 
-            next LINE if $ff =~ /_seq_seq/;
+            next LINE if $ff =~ m{_seq_seq}xms;
+
             # interleaved
-            if (scalar(@taxlabels) == $number_taxa) {
-                if ($taxon_id >= ($number_taxa - 1)) {
+            if ( scalar(@taxlabels) == $number_taxa ) {
+                if ( $taxon_id >= ( $number_taxa - 1 ) ) {
                     $taxon_id = 0;
-                } else {    
+                }
+                else {
                     $taxon_id++;
-                }    
+                }
                 $taxon_started = 1;
             }
-        }    
+        }
     }
-    croak "ERROR: Could not parse $filename. Number taxa not correct.\n" if
-        scalar(@taxlabels) != $number_taxa;
+    croak "ERROR: Could not parse $filename. Number taxa not correct.\n"
+        if scalar(@taxlabels) != $number_taxa;
+
+    $self->_create_nexus_obj($ff, \@taxlabels, \@taxdata, $number_taxa);
+
+    if ($verbose) {
+        $self->say('File import complete.');
+    }
+    return $self;
+}
+
+sub _create_nexus_obj {
+    my ( $self, $ff, $taxlabels_ref, $taxdata_ref, $number_taxa ) = @_;
+
     my $taxa_block = new Bio::NEXUS::TaxaBlock('taxa');
-    $taxa_block->set_taxlabels(\@taxlabels);
+    $taxa_block->set_taxlabels( $taxlabels_ref );
     $self->add_block($taxa_block);
-   
-    if ( $ff =~ /dist/ ) {
+
+    if ( $ff =~ m{dist}xms ) {
         my $distances_block = new Bio::NEXUS::DistancesBlock('distances');
-        $distances_block->set_ntax( scalar(@taxlabels) );
-        $distances_block->set_taxlabels(  \@taxlabels );
-        $distances_block->set_format({triangle   =>'lower', diagonal => 1, labels => 1});
+        $distances_block->set_ntax( scalar @{$taxlabels_ref} );
+        $distances_block->set_taxlabels( $taxlabels_ref );
+        $distances_block->set_format(
+            { triangle => 'lower', diagonal => 1, labels => 1 } );
         my $matrix;
-        for my $i ( 0 .. $distances_block->get_ntax-1 ) {
-            for my $j ( 0 .. $distances_block->get_ntax-1 ) {
+        for my $i ( 0 .. $distances_block->get_ntax - 1 ) {
+            for my $j ( 0 .. $distances_block->get_ntax - 1 ) {
                 my $dist;
-                if (defined $taxdata[$i]->[$j]) {
-                $dist = $taxdata[$i]->[$j]
-                }   
+                if ( defined $taxdata_ref->[$i]->[$j] ) {
+                    $dist = $taxdata_ref->[$i]->[$j];
+                }
                 else {
-                    $dist = $taxdata[$j]->[$i];
+                    $dist = $taxdata_ref->[$j]->[$i];
+
                     # diag. entries:
-                    if (!defined $dist) {
+                    if ( !defined $dist ) {
                         $dist = 0;
-                    } 
-                }    
-                $matrix->{$taxlabels[$i]}{$taxlabels[$j]} = $dist;
-            }    
-        }    
+                    }
+                }
+                $matrix->{ $taxlabels_ref->[$i] }{ $taxlabels_ref->[$j] } = $dist;
+            }
+        }
         $distances_block->{matrix} = $matrix;
-#        $distances_block->_write_matrix();
-        
+
+        #        $distances_block->_write_matrix();
+
         $self->add_block($distances_block);
     }
     else {
         my $chars_block = new Bio::NEXUS::CharactersBlock('characters');
         my %taxa;
-        for my $i ( 0 .. $number_taxa-1 ) {
-            $taxa{$taxlabels[$i]} = join('', @{$taxdata[$i]});
-        }    
+        for my $i ( 0 .. $number_taxa - 1 ) {
+            $taxa{ $taxlabels_ref->[$i] } = join q{}, @{ $taxdata_ref->[$i] };
+        }
 
         my (@otus);
-        
-        for my $name (@taxlabels) {
+
+        for my $name (@{$taxlabels_ref}) {
             my $seq = $taxa{$name};
-            push @otus, Bio::NEXUS::TaxUnit->new( $name, [ split //, $seq ] );
+            push @otus, Bio::NEXUS::TaxUnit->new( $name, [ split //xms, $seq ] );
         }
 
         my $otuset = $chars_block->get_otuset();
         $otuset->set_otus( \@otus );
         $chars_block->set_taxlabels( $otuset->get_otu_names() );
-        
+
         $self->add_block($chars_block);
-    }    
-    print "File import complete.\n"  if $verbose;
-    return $self;
+    }
+    return;
 }
 
-
-1; # Magic true value required at end of module
+1;    # Magic true value required at end of module
 __END__
 
 =head1 NAME
@@ -299,7 +337,7 @@ popular phylogeny programs
 
 =head1 VERSION
 
-This document describes Bio::NEXUS::Import version 0.0.4
+This document describes Bio::NEXUS::Import version 0.1.0
 
 
 =head1 SYNOPSIS
@@ -485,7 +523,7 @@ Markus Riester  C<< <mriester@gmx.de> >>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2007, Markus Riester C<< <mriester@gmx.de> >>. All rights reserved.
+Copyright (c) 2007-2008, Markus Riester C<< <mriester@gmx.de> >>.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.

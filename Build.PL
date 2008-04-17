@@ -8,12 +8,15 @@ my $builder = Module::Build->new(
     dist_author         => 'Markus Riester <mriester@gmx.de>',
     dist_version_from   => 'lib/Bio/NEXUS/Import.pm',
     requires => {
-        'Test::More' => 0,
         'version'    => 0,
-        'Bio::NEXUS'    => 0.67,
+        'Bio::NEXUS' => 0.67,
+        'perl'       => '5.6.1',
     },
+    build_requires => {
+        'Test::More' => 0,
+    },    
     script_files        => [ 
-                  'exec/phylip2nex.pl',
+                  'bin/phylip2nex.pl',
                            ],
     add_to_cleanup      => [ 'Bio-NEXUS-Import-*' ],
 );

@@ -14,7 +14,7 @@ WriteMakefile(
         'Bio::NEXUS'    => 0.67,
     },
     EXE_FILES           => [ 
-                  'exec/phylip2nex.pl',
+                  'bin/phylip2nex.pl',
                            ],
 
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
