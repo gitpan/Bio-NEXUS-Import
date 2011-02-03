@@ -12,8 +12,10 @@ t/01_import.t
 t/02_exceptions.t
 t/03_detectformat.t
 t/data/01_distances_lower.phy
+t/data/01_distances_lower_sep_blank.phy
 t/data/01_distances_microsat.phy
 t/data/01_distances_square.phy
+t/data/01_distances_square_sep_blank.phy
 t/data/01_seqs_interleaved.phy
 t/data/01_seqs_oneline.phy
 t/data/01_seqs_sequential.phy
@@ -21,8 +23,8 @@ t/data/02_strangefile.dat
 t/data/02_wrong_distances.phy
 t/data/03_distances.nex
 t/data/03_sequences.nex
-t/perlcriticrc
-t/perlcritic.t
-t/pod-coverage.t
-t/pod.t
+xt/release/perlcriticrc
+xt/release/perlcritic.t
+xt/release/pod-coverage.t
+xt/release/pod.t
 TODO

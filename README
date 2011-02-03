@@ -1,4 +1,5 @@
-Bio-NEXUS-Import version 0.1.0
+Bio-NEXUS-Import version 0.2.0
+------------------------------
 
 A module that extends Bio::NEXUS with parsers for file formats of popular 
 phylogeny programs
@@ -21,15 +22,12 @@ Alternatively, to install with Module::Build, you can use the following commands
     ./Build install
 
 
-
 DEPENDENCIES
 
-None.
+Bio::NEXUS
 
 
-COPYRIGHT AND LICENCE
-
-Copyright (C) 2007, Markus Riester
+LICENCE
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

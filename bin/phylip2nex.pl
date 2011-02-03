@@ -1,11 +1,5 @@
 #!/usr/bin/perl
 
-#############################################################################
-#   $Author: markus $
-#     $Date: 2008-04-17 13:24:22 +0200 (Thu, 17 Apr 2008) $
-# $Revision: 479 $
-#############################################################################
-
 use strict;
 use warnings;
 
@@ -16,7 +10,7 @@ use Pod::Usage;
 use Bio::NEXUS::Import;
 use Data::Dumper;
 
-my $nexus   = new Bio::NEXUS::Import;
+my $nexus   = Bio::NEXUS::Import->new();
 my $version = $Bio::NEXUS::Import::VERSION;
 
 #################
@@ -24,27 +18,31 @@ my $version = $Bio::NEXUS::Import::VERSION;
 #################
 my (%opts);
 Getopt::Long::Configure('bundling');    # for short options bundling
-if (!GetOptions( \%opts, 'format|f=s', 'outfile|o=s', 'verbose|v',
-        'version|V', 'man', 'help|h', )) {
+if (!GetOptions(
+        \%opts,      'format|f=s', 'outfile|o=s', 'verbose|v',
+        'version|V', 'man',        'help|h',
+    )
+    )
+{
     pod2usage(2);
 }
 
 if ( $opts{'version'} ) {
-     croak "Version $version\n";
+    croak "Version $version\n";
 }
 
-if ($opts{man}) {
-    pod2usage( -exitval => 0, verbose => 2 )
+if ( $opts{man} ) {
+    pod2usage( -exitval => 0, verbose => 2 );
 }
-if (!@ARGV || $opts{help}) {
+if ( !@ARGV || $opts{help} ) {
     pod2usage(1);
 }
 
 my ( $infile, $outfile, $input_format, $verbose );
 $infile = shift or croak 'specify infile as last argument on commandline';
-$outfile     = ( $opts{'outfile'} ? $opts{'outfile'} : 'out.nex' );
+$outfile      = ( $opts{'outfile'} ? $opts{'outfile'} : 'out.nex' );
 $input_format = ( $opts{'format'}  ? $opts{'format'}  : undef );
-$verbose     = ( $opts{'verbose'} ? 1                : 0 );
+$verbose      = ( $opts{'verbose'} ? 1                : 0 );
 
 $nexus->import_file( $infile, $input_format, $verbose );
 $nexus->write($outfile);
@@ -100,10 +98,6 @@ Print the version information and exit.
 =head1 SEE ALSO
 
 L<Bio::NEXUS::Import>
-
-=head1 AUTHOR
-
-Markus Riester (mriester@gmx.de)
 
 =head1 DISCLAIMER OF WARRANTY
 

@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 58;
+use Test::More tests => 64;
 #use Test::More 'no_plan';
 use Data::Dumper;
 
@@ -34,6 +34,21 @@ cmp_ok($distances_block->get_distance_between('Alpha', 'Beta'),'==', 1,
 cmp_ok($distances_block->get_distance_between('Epsilon', 'Beta'),'==', 3,
     'distance parsed correctly');
 
+$nexus = Bio::NEXUS::Import->new('t/data/01_distances_square_sep_blank.phy');
+
+eval {
+      $blocks 		      = $nexus->get_blocks; 			   	
+      $taxa_block 	      = $nexus->get_block('taxa');            
+      $distances_block    = $nexus->get_block('distances');
+};
+#warn Dumper $distances_block;
+is_deeply($taxa_block->get_taxlabels, [qw(AlphaLONGTAXANAME SHORT Gamma Delta Epsilon)],
+    '') || diag Dumper $taxa_block->get_taxlabels;
+
+cmp_ok($distances_block->get_distance_between('AlphaLONGTAXANAME', 'SHORT'),'==', 1,
+    'distance parsed correctly');
+cmp_ok($distances_block->get_distance_between('Epsilon', 'SHORT'),'==', 3,
+    'distance parsed correctly');
 ### second testfile
 $nexus	 = Bio::NEXUS::Import->new('t/data/01_distances_lower.phy', 'PHYLIP_DIST_LOWER');
 
@@ -44,7 +59,7 @@ eval {
 };
 #warn Dumper $distances_block;
 is_deeply($taxa_block->get_taxlabels, ['Mouse',  'Bovine', 'Lemur',
-    'Tarsier',  'Squir Monk'  ,'Jpn Macaq' ,'Rhesus Mac' , 'Crab-E.Mac' ,
+    'Tarsier',  'Squir_Monk'  ,'Jpn_Macaq' ,'Rhesus_Mac' , 'Crab_E.Mac' ,
     'BarbMacaq',  'Gibbon', 'Orang', 'Gorilla', 'Chimp', 'Human'],
     '') || diag Dumper $taxa_block->get_taxlabels;
 
@@ -53,8 +68,29 @@ cmp_ok($distances_block->get_distance_between('Human', 'Chimp'),'==', 0.2712,
 cmp_ok($distances_block->get_distance_between('Mouse', 'Human'),'==', 1.7101,
     'distance parsed correctly');
 
+$nexus	 = Bio::NEXUS::Import->new('t/data/01_distances_lower_sep_blank.phy');
+
+eval {
+      $blocks 		      = $nexus->get_blocks; 			   	
+      $taxa_block 	      = $nexus->get_block('taxa');            
+      $distances_block    = $nexus->get_block('distances');
+};
+#warn Dumper $distances_block;
+is_deeply($taxa_block->get_taxlabels, ['MouseWithVeryLongTaxaname',
+    'BovineOtherLongTaxaname', 'Lemur',
+    'Tarsier',  'Squir_Monk'  ,'Jpn_Macaq' ,'Rhesus_Mac' , 'Crab_E.Mac' ,
+    'BarbMacaq',  'Gibbon', 'Orang', 'Gorilla', 'Chimp', 'Human'],
+    '') || diag Dumper $taxa_block->get_taxlabels;
+
+cmp_ok($distances_block->get_distance_between('Human', 'Chimp'),'==', 0.2712,
+    'distance parsed correctly');
+cmp_ok($distances_block->get_distance_between('MouseWithVeryLongTaxaname', 'Human'),'==', 1.7101,
+    'distance parsed correctly');
+
+
 
 $nexus	 = Bio::NEXUS::Import->new('t/data/01_distances_microsat.phy');
+
 
 eval {
       $blocks 		      = $nexus->get_blocks; 			   	
@@ -87,8 +123,8 @@ my @files = (
 
 my %data = (
     'Turkey'     => 'AAGCTNGGGCATTTCAGGGTGAGCCCGGGCAATACAGGGTAT',
-    'Salmo gair' => 'AAGCCTTGGCAGTGCAGGGTGAGCCGTGGCCGGGCACGGTAT',
-    'H. Sapiens' => 'ACCGGTTGGCCGTTCAGGGTACAGGTTGGCCGTTCAGGGTAA',
+    'Salmo_gair' => 'AAGCCTTGGCAGTGCAGGGTGAGCCGTGGCCGGGCACGGTAT',
+    'H._Sapiens' => 'ACCGGTTGGCCGTTCAGGGTACAGGTTGGCCGTTCAGGGTAA',
     Chimp        => 'AAACCCTTGCCGTTACGCTTAAACCGAGGCCGGGACACTCAT',
     Gorilla      => 'AAACCCTTGCCGGTACGCTTAAACCATTGCCGGTACGCTTAA',
 );
@@ -104,7 +140,7 @@ foreach (@files) {
         $chars_block    = $nexus->get_block('characters');
     };
     #warn Dumper $distances_block;
-    is_deeply($taxa_block->get_taxlabels, ['Turkey',  'Salmo gair', 'H. Sapiens',
+    is_deeply($taxa_block->get_taxlabels, ['Turkey',  'Salmo_gair', 'H._Sapiens',
         'Chimp',  'Gorilla'  ],
         '') || diag Dumper $taxa_block->get_taxlabels;
 

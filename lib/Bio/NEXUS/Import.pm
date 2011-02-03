@@ -1,9 +1,3 @@
-#############################################################################
-#   $Author: markus $
-#     $Date: 2008-04-17 13:18:14 +0200 (Thu, 17 Apr 2008) $
-# $Revision: 478 $
-#############################################################################
-
 package Bio::NEXUS::Import;
 
 use warnings;
@@ -15,7 +9,7 @@ use Bio::NEXUS::Functions;
 
 use base 'Bio::NEXUS';
 
-use version; our $VERSION = qv('0.1.0');
+use version; our $VERSION = qv('0.2.0');
 
 sub new {
     my ( $class, $filename, $fileformat, $verbose ) = @_;
@@ -23,11 +17,15 @@ sub new {
     bless $self, $class;
     $self->{'supported_file_formats'} = {
         'phylip' => {
-            'PHYLIP_DIST_SQUARE'     => 1,
-            'PHYLIP_DIST_LOWER'      => 1,
-            'PHYLIP_DIST_UPPER'      => 1,
-            'PHYLIP_SEQ_INTERLEAVED' => 1,
-            'PHYLIP_SEQ_SEQUENTIAL'  => 1,
+            'PHYLIP_DIST_SQUARE'           => 1,
+            'PHYLIP_DIST_LOWER'            => 1,
+            'PHYLIP_DIST_SQUARE_BLANK'     => 1,
+            'PHYLIP_DIST_LOWER_BLANK'      => 1,
+            'PHYLIP_DIST_UPPER'            => 1,
+            'PHYLIP_SEQ_INTERLEAVED'       => 1,
+            'PHYLIP_SEQ_SEQUENTIAL'        => 1,
+            'PHYLIP_SEQ_INTERLEAVED_BLANK' => 1,
+            'PHYLIP_SEQ_SEQUENTIAL_BLANK'  => 1,
         },
         'nexus' => { 'NEXUS' => 1 },
     };
@@ -46,7 +44,7 @@ sub _say {
 
 sub import_file {
     my ( $self, $filename, $fileformat, $verbose ) = @_;
-    if (!-e $filename) {
+    if ( !-e $filename ) {
         croak "ERROR: $filename is not a valid filename\n";
     }
     my @filecontent = split /\n/xms,
@@ -59,7 +57,7 @@ sub import_file {
     if ( !defined $fileformat ) {
         if ($verbose) {
             $self->_say("Trying to detect format of $self->{filename}");
-        };
+        }
         $fileformat = $self->_detect_fileformat( \@filecontent );
         if ($verbose) {
             $self->_say("$fileformat detected");
@@ -96,11 +94,26 @@ sub _detect_fileformat {
     }
     elsif ( $filecontent->[0] =~ m{\A \s* (\d+) \s* \z}xms ) {
         my $number_taxa = $1;
-        if ( length $filecontent->[1] <= 10 ) {
-            return 'PHYLIP_DIST_LOWER';
+        my @fields = split( /\s+/, $filecontent->[1] );
+        if ( length $filecontent->[1] <= 10
+            || scalar(@fields) == 1 )
+        {
+            for my $i ( 1 .. ( scalar( @{$filecontent} ) - 1 ) ) {
+                my @fields2 = split( /\s+/, $filecontent->[$i] );
+                if ( scalar @fields2 != $i ) {
+                    return 'PHYLIP_DIST_LOWER';
+                }
+            }
+            return 'PHYLIP_DIST_LOWER_BLANK';
         }
         else {
-            return 'PHYLIP_DIST_SQUARE';
+            for my $i ( 1 .. ( scalar( @{$filecontent} ) - 1 ) ) {
+                my @fields2 = split( /\s+/, $filecontent->[$i] );
+                if ( scalar @fields2 != $number_taxa + 1 ) {
+                    return 'PHYLIP_DIST_SQUARE';
+                }
+            }
+            return 'PHYLIP_DIST_SQUARE_BLANK';
         }
     }
     elsif ( $filecontent->[0] =~ m{\A \s* \#NEXUS \s* \z}xms ) {
@@ -146,8 +159,8 @@ sub _import_phylip {
     my $verbose       = $args->{'verbose'} || 0;
     my $line_number   = 0;
     my $taxon_started = 0;
-    my $taxon_id = -1;
-    my ($number_taxa, $number_chars, @taxdata, @taxlabels);
+    my $taxon_id      = -1;
+    my ( $number_taxa, $number_chars, @taxdata, @taxlabels );
 LINE:
 
     for my $line ( @{ $args->{'filecontent'} } ) {
@@ -176,15 +189,23 @@ LINE:
                 }
             }
             if ( !defined $number_taxa ) {
-                croak( "ERROR: First line must contain number of taxa.\n" );
+                croak("ERROR: First line must contain number of taxa.\n");
             }
             next LINE;
         }
         if ( !$taxon_started ) {
             $taxon_id++;
 
-            # first 10 chars are the labels
-            my ( $label, $data ) = $line =~ m{ \A (.{10})(.*) \z }xms;
+            my ( $label, $data );
+
+            if ( $ff =~ m{blank\z}xms ) {
+                ( $label, $data ) = $line =~ m{ \A (.*?)\s+(.*) \z }xms;
+            }
+            else {
+
+                # first 10 chars are the labels
+                ( $label, $data ) = $line =~ m{ \A (.{10})(.*) \z }xms;
+            }
 
             # undefined? then we have only one label, no data
             # for example in the first row of a lower distmatrix
@@ -196,7 +217,10 @@ LINE:
             #remove leading and trailing whitespaces
             $label =~ s{\A \s+}{}xms;
             $label =~ s{\s+ \z}{}xms;
-            $data  =~ s{\A \s+}{}xms;
+
+            $label =~ s{-|\s}{_}xms;
+
+            $data =~ s{\A \s+}{}xms;
             my @taxondata = split /\s+/xms, $data;
 
             $taxdata[$taxon_id] = [@taxondata];
@@ -258,7 +282,7 @@ LINE:
     croak "ERROR: Could not parse $filename. Number taxa not correct.\n"
         if scalar(@taxlabels) != $number_taxa;
 
-    $self->_create_nexus_obj($ff, \@taxlabels, \@taxdata, $number_taxa);
+    $self->_create_nexus_obj( $ff, \@taxlabels, \@taxdata, $number_taxa );
 
     if ($verbose) {
         $self->say('File import complete.');
@@ -269,14 +293,14 @@ LINE:
 sub _create_nexus_obj {
     my ( $self, $ff, $taxlabels_ref, $taxdata_ref, $number_taxa ) = @_;
 
-    my $taxa_block = new Bio::NEXUS::TaxaBlock('taxa');
-    $taxa_block->set_taxlabels( $taxlabels_ref );
+    my $taxa_block = Bio::NEXUS::TaxaBlock->new('taxa');
+    $taxa_block->set_taxlabels($taxlabels_ref);
     $self->add_block($taxa_block);
 
     if ( $ff =~ m{dist}xms ) {
-        my $distances_block = new Bio::NEXUS::DistancesBlock('distances');
+        my $distances_block = Bio::NEXUS::DistancesBlock->new('distances');
         $distances_block->set_ntax( scalar @{$taxlabels_ref} );
-        $distances_block->set_taxlabels( $taxlabels_ref );
+        $distances_block->set_taxlabels($taxlabels_ref);
         $distances_block->set_format(
             { triangle => 'lower', diagonal => 1, labels => 1 } );
         my $matrix;
@@ -294,7 +318,8 @@ sub _create_nexus_obj {
                         $dist = 0;
                     }
                 }
-                $matrix->{ $taxlabels_ref->[$i] }{ $taxlabels_ref->[$j] } = $dist;
+                $matrix->{ $taxlabels_ref->[$i] }{ $taxlabels_ref->[$j] }
+                    = $dist;
             }
         }
         $distances_block->{matrix} = $matrix;
@@ -304,7 +329,7 @@ sub _create_nexus_obj {
         $self->add_block($distances_block);
     }
     else {
-        my $chars_block = new Bio::NEXUS::CharactersBlock('characters');
+        my $chars_block = Bio::NEXUS::CharactersBlock->new('characters');
         my %taxa;
         for my $i ( 0 .. $number_taxa - 1 ) {
             $taxa{ $taxlabels_ref->[$i] } = join q{}, @{ $taxdata_ref->[$i] };
@@ -312,9 +337,10 @@ sub _create_nexus_obj {
 
         my (@otus);
 
-        for my $name (@{$taxlabels_ref}) {
+        for my $name ( @{$taxlabels_ref} ) {
             my $seq = $taxa{$name};
-            push @otus, Bio::NEXUS::TaxUnit->new( $name, [ split //xms, $seq ] );
+            push @otus,
+                Bio::NEXUS::TaxUnit->new( $name, [ split //xms, $seq ] );
         }
 
         my $otuset = $chars_block->get_otuset();
@@ -376,8 +402,11 @@ phylogeny programs.
  Usage   : Bio::NEXUS::Import->import_file($filename, $fileformat, $verbose);
  Function: Reads the contents of the specified file and populate the data 
            in the Bio::NEXUS object.
-           Supported fileformats are NEXUS, PHYLIP_DIST_SQUARE, PHYLIP_DIST_LOWER,
-           PHYLIP_SEQ_INTERLEAVED, PHYLIP_SEQ_SEQUENTIAL.
+           Supported fileformats are NEXUS, PHYLIP_DIST_SQUARE, 
+           PHYLIP_DIST_SQUARE_BLANK, PHYLIP_DIST_LOWER,
+           PHYLIP_DIST_LOWER_BLANK, PHYLIP_SEQ_INTERLEAVED,
+           PHYLIP_SEQ_INTERLEAVED_BLANK, PHYLIP_SEQ_SEQUENTIAL, 
+           PHYLIP_SEQ_SEQUENTIAL_BLANK.
            If $fileformat is not defined, then this function tries to
            detect the correct format. NEXUS files are parsed with
            Bio::NEXUS->read_file();
@@ -458,7 +487,10 @@ sequences or discrete characters morphology data file into the NEXUS format.
 
 =head1 APPENDIX: SUPPORTED FILE FORMATS
 
-Below a collection of examples of all supported file formats:
+This appendix lists examples of all supported file formats. The PHYLIP_*_BLANK
+formats are modifications of the PHYLIP formats to support longer labels than
+the 10 characters. The end of a label is marked with a white space
+character such as a blank.
 
 =over
 
@@ -472,11 +504,32 @@ Below a collection of examples of all supported file formats:
     Delta      3.000 3.000 0.000 0.000 1.000
     Epsilon    3.000 3.000 3.000 1.000 0.000
 
+
+=item C<PHYLIP_DIST_SQUARE_BLANK>
+
+        5
+    Alpha_Long_Taxon 0.000 1.000 2.000 3.000 3.000
+    Beta 1.000 0.000 2.000 3.000 3.000
+    Gamma 2.000 2.000 0.000 3.000 3.000
+    Delta 3.000 3.000 0.000 0.000 1.000
+    Epsilon 3.000 3.000 3.000 1.000 0.000
+
+
 =item C<PHYLIP_DIST_LOWER>
 
 
         5
     Alpha      
+    Beta       1.00
+    Gamma      3.00 3.00
+    Delta      3.00 3.00 2.00
+    Epsilon    3.00 3.00 2.00 1.00
+
+=item C<PHYLIP_DIST_LOWER_BLANK>
+
+
+        5
+    Alpha_Long_Taxon      
     Beta       1.00
     Gamma      3.00 3.00
     Delta      3.00 3.00 2.00
@@ -516,14 +569,9 @@ Below a collection of examples of all supported file formats:
 
 =back
 
-=head1 AUTHOR
-
-Markus Riester  C<< <mriester@gmx.de> >>
-
-
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2007-2008, Markus Riester C<< <mriester@gmx.de> >>.
+Copyright (c) 2007-2011, C<< <limaone@cpan.org> >>.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.

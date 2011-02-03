@@ -5,7 +5,7 @@ use Module::Build;
 my $builder = Module::Build->new(
     module_name         => 'Bio::NEXUS::Import',
     license             => 'perl',
-    dist_author         => 'Markus Riester <mriester@gmx.de>',
+    dist_author         => 'LIMAONE <limaone@cpan.org>',
     dist_version_from   => 'lib/Bio/NEXUS/Import.pm',
     requires => {
         'version'    => 0,
@@ -18,6 +18,11 @@ my $builder = Module::Build->new(
     script_files        => [ 
                   'bin/phylip2nex.pl',
                            ],
+    meta_merge => {
+        resources => {
+            repository => 'http://github.com/lima1/p5-bio-nexus-import',
+        },
+    },
     add_to_cleanup      => [ 'Bio-NEXUS-Import-*' ],
 );
 
